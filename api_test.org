@@ -1,0 +1,139 @@
+#+PROPERTY: var auth=eloldreader-auth-token
+
+* Get API Token
+#+BEGIN_SRC restclient
+POST https://theoldreader.com/accounts/ClientLogin
+ContentType: application/x-www-form-urlencoded
+
+output=json&client=TestApp&accountType=HOSTED_OR_GOOGLE&service=reader&Email=email&Passwd=password
+
+#+END_SRC
+
+* Unread Count
+
+Includes items with 0 unread
+Includes labels but not feed names.
+
+#+BEGIN_SRC restclient
+GET https://theoldreader.com/reader/api/0/unread-count?output=json
+Authorization: GoogleLogin auth=:auth
+#+END_SRC
+
+
+** Response example
+#+BEGIN_SRC js
+{
+  "unreadcounts": [
+
+    {
+      "newestItemTimestampUsec": "1449547656000000",
+      "count": 1481,
+      "id": "feed/514e26ca54cf82144501a934"
+    },
+  ],
+  "max": 1852
+}
+#+END_SRC
+
+
+* Subscriptions list
+
+#+BEGIN_SRC restclient
+GET https://theoldreader.com/reader/api/0/subscription/list?output=json
+Authorization: GoogleLogin auth=:auth
+#+END_SRC
+
+* Item ids
+
+GET https://theoldreader.com/reader/api/0/stream/items/ids?output=json&s=feed/5659240cc70bc221ac0005f6
+Authorization: GoogleLogin auth=:auth
+
+#RESPONSE
+#{
+#  "continuation": "1449513988",
+#  "itemRefs": [
+#    {
+#      "timestampUsec": "1449557301420000",
+#      "directStreamIds": [],
+#      "id": "56667d37175ad6ecea004c57"
+#    }
+#  ]
+#}
+
+* Item contents
+Can do multiple at a time.
+yes, the &amp; is needed betwen output and items.
+The content of i seems to be ignored.
+
+#+BEGIN_SRC restclient
+POST https://theoldreader.com/reader/api/0/stream/items/contents?output=json&amp;i=tag:google.com,2005:reader/item/56667d37175ad6ecea004c57
+Authorization: GoogleLogin auth=:auth
+#+END_SRC
+
+#
+* Stream contents
+# Unread items for a stream
+GET https://theoldreader.com/reader/api/0/stream/contents?output=json&s=feed/53c2dd58c70bc2da4b0005a6&r=o
+Authorization: GoogleLogin auth=:auth
+#{
+#  "continuation": "1369928841",
+#  "items": [
+#{
+#      "origin": {
+#        "htmlUrl": "http://www.avasdemon.com/",
+#        "title": "Ava's Demon",
+#        "streamId": "feed/53c2dd58c70bc2da4b0005a6"
+#      },
+#      "comments": [],
+#      "likingUsersCount": 0,
+#      "likingUsers": [],
+#      "annotations": [],
+#      "author": "",
+#      "summary": {
+#        "content": "<img src=\"http://25.media.tumblr.com/d6b8fad6e0fffdb8f607b5a71073a10b/tumblr_mnfwv2EUp81rtsbszo1_r1_500.png\"><br><br><img src=\"http://24.media.tumblr.com/29564a37e#12fbeb52aee1d49ffe446f7/tumblr_mnfwv2EUp81rtsbszo2_400.png\"><br><br><p><strong>||     <a href=\"http://www.kickstarter.com/projects/1908899476/avas-demon-book-one\"> The “Ava’s Demon: Book One” kickstarter has launched!</a>      ||</strong></p>\n<p>Happy Birthday Ava’s Demon! And a very happy first publication!<br>Supporting this kickstarter will ensure the creation of the comic’s first <strong>limited edition, 500 panel, 9”x9” hardcover book</strong> that you can preorder as a reward. It’s being designed to look like the book Ava receives in the comic and will only be available through this kickstarter! Aside from the book, there are a TON of other awesome rewards as well!</p>\n<p><strong>The ultimate goal of the kickstarter is to see if it can raise $200k so that I can make it my full time job, updating this comic at least twice a week for you guys!! Cross your fingers!!</strong></p>",
+#        "direction": "ltr"
+#      },
+#      "alternate": [
+#        {
+#          "type": "text/html",
+#          "href": "http://avasdemon.tumblr.com/post/51724515304"
+#        }
+#      ],
+#       "canonical": [
+#         {
+#           "href": "http://avasdemon.tumblr.com/post/51724515304"
+#         }
+#       ],
+#       "updated": 1369923299,
+#       "published": 1369923299,
+#       "title": "||      The “Ava’s Demon: Book One”...",
+#       "categories": [
+#         "user/-/state/com.google/reading-list",
+#         "user/-/state/com.google/read"
+#       ],
+#       "id": "tag:google.com,2005:reader/item/51a774886f48eaafd60095d8",
+#       "timestampUsec": "1369923299000000",
+#       "crawlTimeMsec": "1369928840000"
+#     }
+#   ],
+#   "updated": 1437613621,
+#   "alternate": {
+#     "type": "text/html",
+#     "href": "http://www.avasdemon.com/"
+#   },
+#   "self": {
+#     "href": "https://theoldreader.com/reader/api/0/stream/contents?output=json&s=feed/53c2dd58c70bc2da4b0005a6&r=o"
+#   },
+#   "description": "",
+#   "title": "Ava's Demon",
+#   "id": "feed/53c2dd58c70bc2da4b0005a6",
+#   "direction": "ltr"
+# }
+
+* Content of a single feed
+#No read, unread data
+GET https://theoldreader.com/reader/atom/feed/514e26ca54cf82144501a934?output=json
+
+# Local Variables:
+# org-use-property-inheritance: t
+# End:
