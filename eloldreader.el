@@ -38,7 +38,7 @@
          (not (null (libxml-parse-html-region (point-min) (point-max)))))))
 
 (defvar eloldreader-root-id (intern "user/-/state/com.google/root")
-  "The special id used to identofy the root feed group.")
+  "The special id used to identify the root feed group.")
 
 (defvar eloldreader-auth-token nil
   "The auth key to access your OldReader account.
