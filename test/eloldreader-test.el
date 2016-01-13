@@ -131,3 +131,34 @@ Set using `eloldreader-request-mock-retrieve`")
    (eloldreader-process-unread-counts  '((unreadcounts ((other . "other") (id . "id")))))
    (should (equal 1 (hash-table-count eloldreader-unread-counts)))
    (should (equal '((other . "other") (id . "id")) (gethash "id" eloldreader-unread-counts)))))
+
+(ert-deftest eloldreader ()
+  (eloldreader-safe
+   (mocklet (((eloldreader-feeds-mode))
+             ((eloldreader-feeds-update)))
+     (eloldreader))))
+
+(ert-deftest eloldreader-show-headers ()
+  (eloldreader-safe
+   (let ((id "some-id"))
+     (mocklet (((eloldreader-headers-view-mode))
+               ((eloldreader-fetch-headers id)))
+       (eloldreader-show-headers id)))))
+
+(ert-deftest eloldreader-headers-view-mode ()
+  (eloldreader-safe
+   (eloldreader-headers-view-mode)
+   (should (eql (current-local-map) eloldreader-headers-view-mode-map))
+   (should (eql major-mode 'eloldreader-headers-view))
+   (should (eql truncate-lines t))
+   (should (eql buffer-read-only t))
+   (should (eql buffer-undo-list t))
+   (should (eql hl-line-mode t))))
+
+(ert-deftest eloldreader-fetch-headers ()
+  (eloldreader-safe
+   (eloldreader-with-fake-response
+    "{\"items\":[{\"id\":\"feed\\/abc\"}]}"
+    (mocklet (((eloldreader-current-articles-update '(((id . "feed/abc"))))))
+      (eloldreader-fetch-headers "id")))))
+

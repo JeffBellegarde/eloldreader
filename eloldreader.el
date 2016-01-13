@@ -273,7 +273,7 @@ Need to break it into a list.
         buffer-read-only t)
   (buffer-disable-undo)
   (hl-line-mode)
-;;  (add-hook 'elfeed-update-hooks #'eloldreader-headers-view-update)
+;;  (add-hook 'elfeed-update-hooks #'eloldreader-fetch-headers)
   (run-hooks 'eloldreader-headers-view-mode-hook))
 
 (defun eloldreader-show-headers (id)
@@ -281,7 +281,7 @@ Need to break it into a list.
   (switch-to-buffer (eloldreader-headers-view-buffer))
   (unless (eq major-mode 'eloldreader-headers-view-mode)
     (eloldreader-headers-view-mode))
-  (eloldreader-headers-view-update id))
+  (eloldreader-fetch-headers id))
 
 ;; (eloldreader-show-headers "feed/53c2dd58c70bc2da4b0005a6")
 
@@ -372,7 +372,7 @@ Update with 'eloldreader-show-article'.")
                  eloldreader-current-articles)
         (insert "End of entries.\n")))))
 
-(defun eloldreader-headers-view-update (feed_id)
+(defun eloldreader-fetch-headers (feed_id)
   (interactive "sFeed_id: ")
   ;;  (message "Requesting for %s" feed_id)
   (request "https://theoldreader.com/reader/api/0/stream/contents"
