@@ -149,7 +149,7 @@ Set using `eloldreader-request-mock-retrieve`")
   (eloldreader-safe
    (eloldreader-headers-view-mode)
    (should (eql (current-local-map) eloldreader-headers-view-mode-map))
-   (should (eql major-mode 'eloldreader-headers-view))
+   (should (eql major-mode 'eloldreader-headers-view-mode))
    (should (eql truncate-lines t))
    (should (eql buffer-read-only t))
    (should (eql buffer-undo-list t))
