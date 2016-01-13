@@ -1,18 +1,20 @@
 language: emacs-lisp
 env:
   matrix:
-    - emacs=emacs24
-    - emacs=emacs-snapshot
-
+  - emacs=emacs24
+  - emacs=emacs-snapshot
 before_install:
-  - sudo add-apt-repository -y ppa:cassou/emacs
-  - sudo add-apt-repository -y ppa:ubuntu-elisp
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq $emacs
-  - curl -fsSkL --max-time 10 --retry 10 --retry-delay 10 https://raw.github.com/cask/cask/master/go | python
-  - export PATH="/home/travis/.cask/bin:$PATH"
+- sudo add-apt-repository -y ppa:cassou/emacs
+- sudo add-apt-repository -y ppa:ubuntu-elisp
+- sudo apt-get update -qq
+- sudo apt-get install -qq $emacs
+- curl -fsSkL --max-time 10 --retry 10 --retry-delay 10 https://raw.github.com/cask/cask/master/go
+  | python
+- export PATH="/home/travis/.cask/bin:$PATH"
 install:
-  - cask install
+- cask install
 script:
-  - cask exec ert-runner
-  
+- cask exec ert-runner
+notifications:
+  slack:
+    secure: oZ5GM/k/FC70YpC/zZtx2ubcFA86YZ9/ENF/BZ/jyK8V8rt/Z5l2nBwiLvCs+5Vs6j0UPoYAX9jNVOAjQaS2NIhLv6nkw1s6EqD4w/U03rxd0JZuGEDlNlA+QslAqZgZiKdS7ypfawv92rseZPPq57ca08hjCCweGZpPvHxEFv7YTV/Gg0vGJMA10Dj8GD5nYwzNR26XWH8701IASulBBRwEvSvtylGa1v53oIF82KfRC/v4A60q3wZENGdkNHulBZvHa7ehtCeQC0XR5xNq0LYi1WhtdogXNFnOLbxcdLCccu2bb22fhCnffVYKVEZUGDAb/HCZsSNTLJUiqhCRSeU1N+Va71SqVSN78RENlKNJIIioKSY4uDH3Uz4nLQOXopk7x4FACLHcDH/0H2pU1KmTfke943kL23yB+7zoeO7r3rRX0fQO1rx0LeTudaoQ1pmPfLDV5PpA521Kv+xdxFmQmWVD1goPOnwrWoM0I5u0XgeUcY/1VgMhrSZKI3aMBwEwjj2STQCyAMiByKCRyOuQbkIR+NohCu3pOogNovNQmGxXkLsyYRRLaHNJU6+NhbNhaM/R/FZYSkaOMxeGNzc6x0dPfrKzSJN4lDsueqyHYpRQG7TpT49mIF81FE5wrfgBw4IanzuSVr1fl29hoWCRqsqOTXAlOwz6jGmWtZQ=
