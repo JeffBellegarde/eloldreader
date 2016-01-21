@@ -1,4 +1,4 @@
-#+PROPERTY: var auth=eloldreader-auth-token
+#+PROPERTY: var auth=(symbol-value 'eloldreader-auth-token)
 
 * Get API Token
 #+BEGIN_SRC restclient
@@ -137,3 +137,4 @@ GET https://theoldreader.com/reader/atom/feed/514e26ca54cf82144501a934?output=js
 # Local Variables:
 # org-use-property-inheritance: t
 # End:
+
