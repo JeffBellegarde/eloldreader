@@ -2,7 +2,7 @@ language: generic
 sudo: false
 env:
   matrix:
-  - emacs=24.5
+  - EMACS_VERSION=24.5
 
 #Using techinque from https://github.com/capitaomorte/yasnippet/pull/652
 #SHould allow faster docker based ci builds.
