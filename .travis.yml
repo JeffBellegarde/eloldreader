@@ -1,16 +1,25 @@
-#language: emacs-lisp
+language: generic
+sudo: false
 env:
   matrix:
-  - emacs=emacs24
-  - emacs=emacs-snapshot
+  - emacs=24.5
+
+#Using techinque from https://github.com/capitaomorte/yasnippet/pull/652
+#SHould allow faster docker based ci builds.
+
 before_install:
-- sudo add-apt-repository -y ppa:cassou/emacs
-- sudo add-apt-repository -y ppa:ubuntu-elisp
-- sudo apt-get update -qq
-- sudo apt-get install -qq $emacs
-- curl -fsSkL --max-time 10 --retry 10 --retry-delay 10 https://raw.github.com/cask/cask/master/go
-  | python
-- export PATH="/home/travis/.cask/bin:$PATH"
+- curl -LO https://github.com/npostavs/emacs-travis/releases/download/bins/emacs-bin-${EMACS_VERSION}.tar.gz
+- tar -xaf emacs-bin-${EMACS_VERSION}.tar.gz -C /
+# Configure $PATH: Emacs installed to /tmp/emacs
+- export PATH=/tmp/emacs/bin:${PATH}
+- emacs --version
+# - sudo add-apt-repository -y ppa:cassou/emacs
+# - sudo add-apt-repository -y ppa:ubuntu-elisp
+# - sudo apt-get update -qq
+# - sudo apt-get install -qq $emacs
+# - curl -fsSkL --max-time 10 --retry 10 --retry-delay 10 https://raw.github.com/cask/cask/master/go
+#   | python
+# - export PATH="/home/travis/.cask/bin:$PATH"
 install:
 - cask install
 script:
