@@ -16,13 +16,10 @@ before_install:
 # Configure $PATH: Emacs installed to /tmp/emacs
 - export PATH=/tmp/emacs/bin:${PATH}
 - emacs --version
-# - sudo add-apt-repository -y ppa:cassou/emacs
-# - sudo add-apt-repository -y ppa:ubuntu-elisp
-# - sudo apt-get update -qq
-# - sudo apt-get install -qq $emacs
 - curl -fsSkL --max-time 10 --retry 10 --retry-delay 10 https://raw.github.com/cask/cask/master/go | python
 - export PATH="/home/travis/.cask/bin:$PATH"
 install:
+- git clone https://github.com/JeffBellegarde/region-command-mode.git ~/src/region-command-mode
 - cask install
 script:
 - cask exec ert-runner
