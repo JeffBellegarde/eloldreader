@@ -96,20 +96,16 @@ DO NOT save this in a public place.")
 (defvar eloldreader-feeds-last-update 0)
 
 (defvar eloldreader-subscriptions (make-hash-table :test 'equal)
-  "All known subscritions. Updated by 'eloldreader-fetch-subscriptions'.")
+  "All known subscriptions. Updated by 'eloldreader-fetch-subscriptions'.")
 
 (defvar eloldreader-unread-counts (make-hash-table :test 'equal)
   "Current Unread counts. Updated by 'eloldreader-fetch-unread-counts'.")
 
 (defvar eloldreader-current-articles (make-hash-table :test 'equal)
   "The list of current articles")
-(defun eloldreader-feeds-fetch ()
-  ;; How to wait for succes?
-  (eloldreader-fetch-subscriptions)
-  (eloldreader-fetch-unread-counts))
 
 (defun eloldreader-feeds-update ()
-  "Update the elfeed-search buffer listing to match the database.
+  "Update the eloldreader-feeds-buffer listing to match the database.
 When FORCE is non-nil, redraw even when the database hasn't changed"
   (interactive)
   (with-current-buffer (eloldreader-feeds-buffer)
@@ -122,33 +118,70 @@ When FORCE is non-nil, redraw even when the database hasn't changed"
          (format "Eloldreader update: %s" (format-time-string "%B %e %Y %H:%M:%S %Z")))
         (insert "\n")
         (if (or (eq 0 (hash-table-count eloldreader-unread-counts))
-                  (eq 0 (hash-table-count eloldreader-subscriptions)))
+                (eq 0 (hash-table-count eloldreader-subscriptions)))
             (insert "Still waiting for data.\n")
-          (maphash (lambda (id _v)
-                     (insert " ")
-                     (lexical-let ((show-feed (lambda (_button)
-                                                (eloldreader-show-headers id))))
-                       (insert-text-button (format "%s %s %s" id (eloldreader-display-name-for-id id) (eloldreader-unread-count-for-id id))
-                                           'action show-feed
-                                           'follow-link t
-                                           'help-echo "show feed"))
-                     (insert "\n"))
-                   eloldreader-unread-counts))
+          ;; (maphash (lambda (id _v)
+          ;;            (insert " ")
+          ;;            (lexical-let ((show-feed (lambda (_button)
+          ;;                                       (eloldreader-show-headers id))))
+          ;;              (insert-text-button (format "%s %s %s" id (eloldreader-display-name-for-id id) (eloldreader-unread-count-for-id id))
+          ;;                                  'action show-feed
+          ;;                                  'follow-link t
+          ;;                                  'help-echo "show feed"))
+          ;;            (insert "\n"))
+          ;;          eloldreader-unread-counts)
+          ;; (message "subkeys %s" (hash-table-count eloldreader-subscriptions))
+          (maphash (lambda (folder feeds)
+                     ;; (message "folder: %s %s" folder feeds)
+                     (insert (if folder folder ""))
+                     (insert "\n")
+                     ;; (message "subsubkeys %s" (hash-table-count feeds))
+                     (maphash (lambda (id details)
+                                (let ((line (eloldreader--format-feed-line id details)))
+                                  (if (> (length line) 0)
+                                      (lexical-let ((show-feed (lambda (_button)
+                                                                 (eloldreader-show-headers id))))
+                                        (insert "  ")
+                                        (insert-text-button line
+                                                            'action show-feed
+                                                            'follow-link t
+                                                            'help-echo "show feed")))))
+                              feeds))
+                   eloldreader-subscriptions))
         ;;        (elfeed-search--update-list)
         ;; (dolist (entry elfeed-search-entries)
         ;;   (elfeed-search-print entry)
         ;;   (insert "\n"))
         (insert "End of entries.\n")))))
 
+(defun eloldreader--format-feed-line (id details)
+  (let ((title (cdr (assoc 'title details)))
+        (unread-count (eloldreader-unread-count-for-id id)))
+    (if (> unread-count 0)
+        (format  "%4s %s\n" unread-count title)
+      "")))
 
+(defun eloldreader-feeds-fetch ()
+  ;; How to wait for success?
+  (eloldreader-fetch-subscriptions)
+  (eloldreader-fetch-unread-counts))
 
 (defun eloldreader-process-subscriptions (data)
   (clrhash eloldreader-subscriptions)
   (let ((subs (cdr (assoc 'subscriptions data))))
     (dolist (entry subs)
+      ;; (message "entry %s" entry)
       (let* ((id-entry (assoc 'id entry))
-             (id (cdr id-entry)))
-        (puthash id entry eloldreader-subscriptions)))))
+             (id (cdr id-entry))
+             (categories (car (cdr (assoc 'categories entry))))
+             (category-label (if (eq 0 (length categories))
+                                 "Unlabelled"
+                               (cdr (assoc 'label categories))))
+             (existing-category (gethash category-label eloldreader-subscriptions))
+             (category (if existing-category existing-category (make-hash-table :test 'equal))))
+        ;; (message "label for %s is %s %s" id categories category-label)
+        (puthash category-label category eloldreader-subscriptions)
+        (puthash id entry category)))))
 
 (defun eloldreader-fetch-subscriptions ()
   (request "https://theoldreader.com/reader/api/0/subscription/list"
@@ -204,7 +237,7 @@ Need to break it into a list.
                        (setq eloldreader-feed-display-order '())
                        (let* ((streamprefs  (cdr (assoc 'streamprefs data))))
                          (message "sp type %s:" (type-of streamprefs))
-                          streamprefs)))))
+                         streamprefs)))))
 ;;(eloldreader-fetch-preferences)
 
 (defun eloldreader-display-name-for-id (id)
@@ -307,13 +340,13 @@ Update with 'eloldreader-show-article'.")
 (defun eloldreader-scroll-or-next-article ()
   (interactive)
   (let* ((next-button-line (save-excursion
-                            (forward-button 1)
-                            (line-number-at-pos)))
+                             (forward-button 1)
+                             (line-number-at-pos)))
          (next-page-line (+ (line-number-at-pos) (window-size))))
     (if (< next-button-line next-page-line)
         (eloldreader-next-article)
       (scroll-up))))
-             
+
 (defun eloldreader-show-article (id)
   ;;(message "showing article %s" id)
   (eloldreader-article-hide-current)

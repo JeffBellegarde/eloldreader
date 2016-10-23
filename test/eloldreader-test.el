@@ -5,7 +5,20 @@
 
 (eval-when-compile
   (require 'cl))
-(defconst eloldreader-test-feeds-buffer-name "*eloldreader-test-buffer*")
+
+(defmacro eloldreader-test-buffer (buffer-func &rest body)
+  (declare
+   (doc-string 3)
+   (indent 2))
+  (let ((test-buffer-name (generate-new-buffer-name "test-buffer")))
+    (letf (((symbol-function ,buffer-func)
+            (lambda () (message "Allocation %s as %s" buffer-func test-buffer-name) (get-buffer-create test-buffer-name))))
+      (unwind-protect
+          ,@body
+        (when (get-buffer test-buffer-name)
+          (message "Destroying %s" test-buffer-name)
+          (kill-buffer test-buffer-name))))))
+
 (defmacro eloldreader-safe (&rest body)
   "Set up a safe environment for eloldreader tests."
   `(let ((eloldreader-feeds-last-update 0)
@@ -14,13 +27,10 @@
          (eloldreader-current-articles (make-hash-table :test 'equal))
          (eloldreader-feed-display-order nil)
          (eloldreader-current-article-id nil))
-     (letf (((symbol-function 'eloldreader-feeds-buffer)
-             (lambda () (get-buffer-create eloldreader-test-feeds-buffer-name))))
-       (unwind-protect
-           (with-temp-buffer
-             ,@body)
-         (when (get-buffer eloldreader-test-feeds-buffer-name)
-           (kill-buffer eloldreader-test-feeds-buffer-name))))))
+     (eloldreader-test-buffer 'eloldreader-feeds-buffer
+         (eloldreader-test-buffer 'eloldreader-headers-view-buffer
+             (with-temp-buffer
+               ,@body)))))
 
 (defvar eloldreader-request-mock-retrieve-content ""
   "The content to be returned.
@@ -110,15 +120,21 @@ Set using `eloldreader-request-mock-retrieve`")
 
 (ert-deftest eloldreader-fetch-subscriptions ()
   (eloldreader-safe
-   (mocklet (((eloldreader-process-subscriptions '((subscriptions ((id . "feed/abc")))))))
-     (eloldreader-with-fake-response "{\"subscriptions\":[{\"id\":\"feed\\/abc\"}]})"
-      (eloldreader-fetch-subscriptions)))))
+   (mocklet (((eloldreader-process-subscriptions '((subscriptions ((categories . ((label . "Some cat"))) (id . "feed/abc") ))))))
+     (eloldreader-with-fake-response "{\"subscriptions\":[{\"id\":\"feed\\/abc\", \"categories\":{\"label\":\"Some cat\"}}]}"
+                                     (eloldreader-fetch-subscriptions)))))
 
 (ert-deftest eloldreader-process-subscriptions ()
   (eloldreader-safe
-   (eloldreader-process-subscriptions  '((subscriptions ((other . "other") (id . "id")))))
-   (should (equal 1 (hash-table-count eloldreader-subscriptions)))
-   (should (equal '((other . "other") (id . "id")) (gethash "id" eloldreader-subscriptions)))))
+   (eloldreader-process-subscriptions
+    '((subscriptions ((other . "other") (id . "id"))
+                     ((id . "child") (categories . ((label . "group")) ))
+                     )))
+   (should (equal 2 (hash-table-count eloldreader-subscriptions)))
+   (let ((expected (make-hash-table :test 'equal)))
+     (puthash "id" '((other . "other") (id . "id")) expected)
+     (should (equal (hash-table-values expected) (hash-table-values (gethash "" eloldreader-subscriptions)))
+             ))))
 
 (ert-deftest eloldreader-fetch-unread-counts ()
   (eloldreader-safe

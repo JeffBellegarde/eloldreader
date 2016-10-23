@@ -1,11 +1,12 @@
 #+PROPERTY: var auth=(symbol-value 'eloldreader-auth-token)
+#+PROPERTY: var password=(symbol-value 'eloldreader-password)
 
 * Get API Token
 #+BEGIN_SRC restclient
 POST https://theoldreader.com/accounts/ClientLogin
 ContentType: application/x-www-form-urlencoded
 
-output=json&client=TestApp&accountType=HOSTED_OR_GOOGLE&service=reader&Email=email&Passwd=password
+output=json&client=YourAppName&accountType=HOSTED_OR_GOOGLE&service=reader&Email=bellegar@gmail.com&Passwd=:password
 
 #+END_SRC
 
@@ -75,6 +76,7 @@ Authorization: GoogleLogin auth=:auth
 # Unread items for a stream
 GET https://theoldreader.com/reader/api/0/stream/contents?output=json&s=feed/53c2dd58c70bc2da4b0005a6&r=o
 Authorization: GoogleLogin auth=:auth
+
 #{
 #  "continuation": "1369928841",
 #  "items": [
@@ -134,7 +136,16 @@ Authorization: GoogleLogin auth=:auth
 #No read, unread data
 GET https://theoldreader.com/reader/atom/feed/514e26ca54cf82144501a934?output=json
 
+* Tag List
+Top level directory structure?
+#+BEGIN_SRC restclient
+GET https://theoldreader.com/reader/api/0/preference/stream/list?output=json
+Authorization: GoogleLogin auth=:auth
+#+END_SRC
+
+
 # Local Variables:
 # org-use-property-inheritance: t
 # End:
+
 
