@@ -74,8 +74,11 @@ Authorization: GoogleLogin auth=:auth
 #
 * Stream contents
 # Unread items for a stream
+#+BEGIN_SRC restclient
 GET https://theoldreader.com/reader/api/0/stream/contents?output=json&s=feed/53c2dd58c70bc2da4b0005a6&r=o
 Authorization: GoogleLogin auth=:auth
+
+#+END_SRC
 
 #{
 #  "continuation": "1369928841",
