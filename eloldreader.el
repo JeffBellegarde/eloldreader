@@ -322,7 +322,7 @@ Need to break it into a list.
   (clrhash eloldreader-current-articles)
   (dolist (item items)
     (puthash (cdr (assoc 'id item)) item eloldreader-current-articles))
-  (message "saved %s articles" (hash-table-size eloldreader-current-articles))
+  (message "showing %s articles" (hash-table-size eloldreader-current-articles))
   (eloldreader-current-articles-show))
 
 (defvar eloldreader-current-article-id nil
@@ -357,15 +357,19 @@ Update with 'eloldreader-show-article'.")
   (interactive)
   (forward-button 1)
   (push-button)
-  (recenter 1)
-  )
+  (recenter 1))
 
 (defun eloldreader-prev-article ()
   (interactive)
   (backward-button 1)
   (push-button)
-  (recenter 1)
-  )
+  (recenter 1))
+
+(defun eloldreader-clear-headers-view ()
+  (with-current-buffer (eloldreader-headers-view-buffer)
+    (save-excursion
+      (let ((inhibit-read-only t))
+        (erase-buffer)))))
 
 (defun eloldreader-current-articles-show ()
   (interactive)
@@ -388,7 +392,7 @@ Update with 'eloldreader-show-article'.")
                                   ;; (label (propertize (format "%s" title )
                                   ;;                    'mouse-face 'highlight
                                   ;;                    'action show-article))
-                                        )
+                                  )
                      ;;(insert "Id: %s" id)
 
                      (insert-text-button title
@@ -403,11 +407,14 @@ Update with 'eloldreader-show-article'.")
                          (add-text-properties start end (list 'invisible id))
                          (add-to-invisibility-spec id)))))
                  eloldreader-current-articles)
-        (insert "End of entries.\n")))))
+        (insert "End of entries.\n")))
+    (push-button) ;; We should be on a button
+    ))
 
 (defun eloldreader-fetch-headers (feed_id)
   (interactive "sFeed_id: ")
   ;;  (message "Requesting for %s" feed_id)
+  (eloldreader-clear-headers-view)
   (request "https://theoldreader.com/reader/api/0/stream/contents"
            :params (list `("output" . "json")
                          (cons "s"  feed_id)
