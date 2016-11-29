@@ -155,7 +155,7 @@ When FORCE is non-nil, redraw even when the database hasn't changed"
         (insert "End of entries.\n")))))
 
 (defun eloldreader--format-feed-line (id details)
-  (let ((title (cdr (assoc 'title details)))
+  (let ((title (gethash 'title details))
         (unread-count (eloldreader-unread-count-for-id id)))
     (if (> unread-count 0)
         (format  "%4s %s\n" unread-count title)
@@ -170,18 +170,18 @@ When FORCE is non-nil, redraw even when the database hasn't changed"
   (clrhash eloldreader-subscriptions)
   (let ((subs (cdr (assoc 'subscriptions data))))
     (dolist (entry subs)
-      ;; (message "entry %s" entry)
+      ;; (message "entry %S" entry)
       (let* ((id-entry (assoc 'id entry))
              (id (cdr id-entry))
-             (categories (car (cdr (assoc 'categories entry))))
+             (categories (cdr (assoc 'categories entry)))
              (category-label (if (eq 0 (length categories))
                                  "Unlabelled"
                                (cdr (assoc 'label categories))))
              (existing-category (gethash category-label eloldreader-subscriptions))
              (category (if existing-category existing-category (make-hash-table :test 'equal))))
-        ;; (message "label for %s is %s %s" id categories category-label)
-        (puthash category-label category eloldreader-subscriptions)
-        (puthash id entry category)))))
+        ;; (message "label for %S is %S %S" id categories category-label)
+        (puthash id entry category)
+        (puthash category-label category eloldreader-subscriptions)))))
 
 (defun eloldreader-fetch-subscriptions ()
   (request "https://theoldreader.com/reader/api/0/subscription/list"
