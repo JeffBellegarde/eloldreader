@@ -4,7 +4,7 @@ env:
   matrix:
   #list of versions: https://github.com/npostavs/emacs-travis/releases
   - EMACS_VERSION=25
-  - EMACS_VERSION=master
+  # - EMACS_VERSION=master
 
 #Using techinque from https://github.com/capitaomorte/yasnippet/pull/652
 #SHould allow faster docker based ci builds.

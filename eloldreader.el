@@ -26,7 +26,7 @@
 (require 'hl-line)
 (require 'dash)
 (require 's)
-
+(require 'subr-x)
 (eval-when-compile
   (require 'cl))
 
@@ -183,15 +183,23 @@ When FORCE is non-nil, redraw even when the database hasn't changed"
         (puthash id entry category)
         (puthash category-label category eloldreader-subscriptions)))))
 
+(setq request-log-level 70)
+
+(defun eloldreader--parser ()
+  ;; (request-log 'error "parsing %S" (buffer-string))
+  ;; (message "parsing")
+  ;; (message " content: %S" (substring (buffer-string) 0 100))
+  (let ((json-array-type 'list))
+    (json-read)))
+
 (defun eloldreader-fetch-subscriptions ()
   (request "https://theoldreader.com/reader/api/0/subscription/list"
            :params '(("output" . "json"))
            :headers (eloldreader-authorization-headers)
-           :parser (lambda ()
-                     (let ((json-array-type 'list))
-                       (json-read)))
+           :parser 'eloldreader--parser
            :success (function*
                      (lambda (&key data &allow-other-keys)
+                       ;; (message "success %S" data)
                        (eloldreader-process-subscriptions data)))))
 ;;(eloldreader-fetch-subscriptions)
 
@@ -207,7 +215,7 @@ When FORCE is non-nil, redraw even when the database hasn't changed"
              (head (car parts))
              (tail (cadr parts)))
         (push (s-append  (s-join "" head) "feed/") result)
-         (setq input-list tail)))
+        (setq input-list tail)))
     (reverse result)))
 
 (defun eloldreader--subscription-order-item-p (item)
@@ -227,9 +235,7 @@ Need to break it into a list.
   (request "https://theoldreader.com/reader/api/0/preference/stream/list"
            :params '(("output" . "json"))
            :headers (eloldreader-authorization-headers)
-           :parser (lambda ()
-                     (let ((json-array-type 'list))
-                       (json-read)))
+           :parser 'eloldreader--parser
            :success (function*
                      (lambda (&key data &allow-other-keys)
                        ;;(message "I received data")
@@ -263,9 +269,7 @@ Need to break it into a list.
   (request "https://theoldreader.com/reader/api/0/unread-count?output=json"
            :params '(("output" . "json"))
            :headers (eloldreader-authorization-headers)
-           :parser (lambda ()
-                     (let ((json-array-type 'list))
-                       (json-read)))
+           :parser 'eloldreader--parser
            :success (function*
                      (lambda (&key data &allow-other-keys)
                        (eloldreader-process-unread-counts data)))))
@@ -314,7 +318,7 @@ Need to break it into a list.
   (switch-to-buffer (eloldreader-headers-view-buffer))
   (unless (eq major-mode 'eloldreader-headers-view-mode)
     (eloldreader-headers-view-mode))
-  (eloldreader-fetch-headers id))
+  (eloldreader-fetch-headers id 'eloldreader-current-articles-update))
 
 ;; (eloldreader-show-headers "feed/53c2dd58c70bc2da4b0005a6")
 
@@ -411,7 +415,7 @@ Update with 'eloldreader-show-article'.")
     (push-button) ;; We should be on a button
     ))
 
-(defun eloldreader-fetch-headers (feed_id)
+(defun eloldreader-fetch-headers (feed_id success-func)
   (interactive "sFeed_id: ")
   ;;  (message "Requesting for %s" feed_id)
   (eloldreader-clear-headers-view)
@@ -421,13 +425,13 @@ Update with 'eloldreader-show-article'.")
                          '("xt" . "user/-/state/com.google/read")
                          '("r" . "o"))
            :headers (eloldreader-authorization-headers)
-           :parser (lambda ()
-                     (let ((json-array-type 'list))
-                       (json-read)))
+           :parser 'eloldreader--parser
            :success (function*
                      (lambda (&key data &allow-other-keys)
-                       (message "received headers")
-                       (eloldreader-current-articles-update (cdr (assoc 'items data)))))))
+                       (request-log 'error "received headers %S %S" success-func data)
+                       (funcall success-func  (cdr (assoc 'items data)))
+                       ;; (eloldreader-current-articles-update (cdr (assoc 'items data)))
+                       ))))
 
 (defun eloldreader-headers-view-buffer ()
   (get-buffer-create "*eloldreader-headers-view*"))

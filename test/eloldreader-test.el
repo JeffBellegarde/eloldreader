@@ -10,12 +10,12 @@
   (let ((test-buffer-name (generate-new-buffer-name "test-buffer")))
     (letf (((symbol-function buffer-func)
             (lambda ()
-              (message "Allocation %s as %s" buffer-func test-buffer-name)
+              ;; (message "Allocation %s as %s" buffer-func test-buffer-name)
               (get-buffer-create test-buffer-name))))
       `(unwind-protect
            ,@body
          (when (get-buffer ,test-buffer-name)
-           (message "Destroying %s" ,test-buffer-name)
+           ;; (message "Destroying %s" ,test-buffer-name)
            (kill-buffer ,test-buffer-name))))))
 
 (eval-when-compile
@@ -28,7 +28,8 @@
          (eloldreader-unread-counts (make-hash-table :test 'equal))
          (eloldreader-current-articles (make-hash-table :test 'equal))
          (eloldreader-feed-display-order nil)
-         (eloldreader-current-article-id nil))
+         (eloldreader-current-article-id nil)
+         (eloldreader-recorded-call nil))
      (eloldreader-test-buffer eloldreader-feeds-buffer
          (eloldreader-test-buffer eloldreader-headers-view-buffer
              (with-temp-buffer
@@ -45,13 +46,19 @@ Set using `eloldreader-request-mock-retrieve`")
     (with-current-buffer buffer
       (setf (request-response--buffer response) buffer)
       (insert eloldreader-request-mock-retrieve-content)
-      (setf (request-response-status-code response) "200 OK")
+      (setf (request-response-status-code response) 200)
       (apply #'request--callback buffer settings))))
 
 (defmacro eloldreader-with-fake-response (data &rest body)
   `(let ((eloldreader-request-mock-retrieve-content ,data))
      (mocklet ((request--choose-backend => 'eloldreader-request-mock-retrieve))
+       ;; (message "%S %S" (symbol-function 'request--choose-backend) ,data)
        ,@body)))
+
+(defvar eloldreader-recorded-call nil)
+
+(defun eloldreader-record-call (args)
+  (setq eloldreader-recorded-call args))
 
 (ert-deftest eloldreader-libxml-supported-p ()
   (eloldreader-safe
@@ -127,7 +134,7 @@ Set using `eloldreader-request-mock-retrieve`")
   (eloldreader-safe
    (mocklet (((eloldreader-process-subscriptions
                '((subscriptions ((id . "feed/abc")
-                                 (categories . ((label . "Some cat"))) ))))))
+                                 (categories . ((label . "Some cat")))))))))
      (eloldreader-with-fake-response "{\"subscriptions\":[{\"id\":\"feed\\/abc\", \"categories\":{\"label\":\"Some cat\"}}]}"
                                      (eloldreader-fetch-subscriptions)))))
 
@@ -165,7 +172,7 @@ Set using `eloldreader-request-mock-retrieve`")
   (eloldreader-safe
    (let ((id "some-id"))
      (mocklet (((eloldreader-headers-view-mode))
-               ((eloldreader-fetch-headers id)))
+               ((eloldreader-fetch-headers id 'eloldreader-current-articles-update)))
        (eloldreader-show-headers id)))))
 
 (ert-deftest eloldreader-headers-view-mode ()
@@ -182,6 +189,6 @@ Set using `eloldreader-request-mock-retrieve`")
   (eloldreader-safe
    (eloldreader-with-fake-response
     "{\"items\":[{\"id\":\"feed\\/abc\"}]}"
-    (mocklet (((eloldreader-current-articles-update '(((id . "feed/abc"))))))
-      (eloldreader-fetch-headers "id")))))
+    (eloldreader-fetch-headers "id" 'eloldreader-record-call)
+    (should (equal '(((id . "feed/abc"))) eloldreader-recorded-call)))))
 
